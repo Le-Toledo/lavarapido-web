@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Funções auxiliares
+    function estaAutenticado() {
+      return request.auth != null;
+    }
+    function ehDono(uid) {
+      return request.auth.uid == uid;
+    }
+    function ehFuncionario() {
+      return estaAutenticado() &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.role
+          in ['funcionario', 'admin'];
+    }
+
+    // Agendamentos
+    // Funcionário lê todos; cliente lê apenas os seus
+    match /agendamentos/{docId} {
+      allow read: if estaAutenticado() && (
+        ehFuncionario() ||
+        resource.data.uid == request.auth.uid ||
+        resource.data.userId == request.auth.uid
+      );
+      allow create: if estaAutenticado();
+      allow update, delete: if estaAutenticado() && (
+        ehFuncionario() ||
+        resource.data.uid == request.auth.uid
+      );
+    }
+
+    // Perfis de usuário
+    match /usuarios/{uid} {
+      allow read: if estaAutenticado() && (ehDono(uid) || ehFuncionario());
+      allow create: if estaAutenticado() && ehDono(uid);
+      allow update: if estaAutenticado() && (ehDono(uid) || ehFuncionario());
+    }
+
+    // Coleção legada users (subcoleções de veículos)
+    match /users/{uid} {
+      allow read, write: if estaAutenticado() && ehDono(uid);
+      match /veiculos/{veiculoId} {
+        allow read, write: if estaAutenticado() && ehDono(uid);
+      }
+    }
+
+    // Serviços — leitura pública, escrita só funcionário
+    match /servicos/{docId} {
+      allow read: if estaAutenticado();
+      allow write: if ehFuncionario();
+    }
+
+    // Estabelecimentos — leitura pública, escrita só funcionário
+    match /estabelecimentos/{docId} {
+      allow read: if estaAutenticado();
+      allow write: if ehFuncionario();
+    }
+
+    // Carros (coleção raiz, se existir)
+    match /carros/{docId} {
+      allow read, write: if estaAutenticado() &&
+        resource.data.uid == request.auth.uid;
+    }
+  }
+}

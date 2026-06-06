@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npx tailwindcss *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"import\\('firebase/auth'\\).then\\(m => console.log\\('inMemoryPersistence:', 'inMemoryPersistence' in m\\)\\).catch\\(e => console.log\\('err',e.message\\)\\)\")",
+      "Bash(node *)",
+      "Bash(firebase --version)",
+      "Bash(firebase login *)",
+      "Bash(firebase deploy *)"
+    ]
+  }
+}
